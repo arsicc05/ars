@@ -19,9 +19,7 @@ func main() {
     _ = service.Add(config)
 	handler := handlers.NewConfigHandler(service)
 
-	router := mux.NewRouter()
-
-	router.HandleFunc("/configs/{name}/{version}", handler.Get).Methods("GET")
+	router := handlers.BuildRouter(handler)
 
 	http.ListenAndServe("0.0.0.0:8000", router)
 }
