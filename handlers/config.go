@@ -21,7 +21,7 @@ func NewConfigHandler(service services.ConfigService) ConfigHandler {
 
 // GET /configs/{name}/{version}
 func (c ConfigHandler) Get(w http.ResponseWriter, r *http.Request) {
-	// dobavi naziv i verziju
+	// get name and version
 	name := mux.Vars(r)["name"]
 	version := mux.Vars(r)["version"]
 	versionInt, err := strconv.Atoi(version)
@@ -30,19 +30,19 @@ func (c ConfigHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// pozovi servis metodu
+	// call service method
 	config, err := c.service.Get(name, versionInt)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
-	// vrati odgovor
+	// return response
 	resp, err := json.Marshal(config)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Header().Set("Content−Type", "application/json")
+	w.Header().Set("Content-Type", "application/json")
 	w.Write(resp)
 }
