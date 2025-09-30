@@ -26,9 +26,7 @@ func (s ConfigService) GetAll() ([]model.Config, error) {
 	return s.repo.GetAll()
 }
 
-func (s ConfigService) Update(config model.Config) error {
-	return s.repo.Update(config)
-}
+
 
 func (s ConfigService) Delete(name string, version int) error {
 	return s.repo.Delete(name, version)
