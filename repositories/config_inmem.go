@@ -46,14 +46,7 @@ func (c *ConfigInMemRepository) GetAll() ([]model.Config, error) {
 	return result, nil
 }
 
-func (c *ConfigInMemRepository) Update(config model.Config) error {
-	key := fmt.Sprintf("%s/%d", config.Name, config.Version)
-	if _, exists := c.configs[key]; !exists {
-		return errors.New("config not found")
-	}
-	c.configs[key] = config
-	return nil
-}
+
 
 func (c *ConfigInMemRepository) Delete(name string, version int) error {
 	key := fmt.Sprintf("%s/%d", name, version)

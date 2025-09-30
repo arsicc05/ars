@@ -32,7 +32,6 @@ type ConfigRepository interface {
 	Add(config Config) error
 	Get(name string, version int) (Config, error)
 	GetAll() ([]Config, error)
-	Update(config Config) error
 	Delete(name string, version int) error
 }
 
@@ -40,6 +39,5 @@ type ConfigGroupRepository interface {
 	Add(group ConfigGroup) error
 	Get(name string, version int) (ConfigGroup, error)
 	GetAll() ([]ConfigGroup, error)
-	Update(group ConfigGroup) error
 	Delete(name string, version int) error
 }
