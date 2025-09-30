@@ -6,6 +6,7 @@ import (
 	"projekat/model"
 	"projekat/services"
 	"strconv"
+    "github.com/google/uuid"
 
 	"github.com/gorilla/mux"
 )
@@ -30,6 +31,7 @@ func (h ConfigGroupHandler) Create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "name and version are required", http.StatusBadRequest)
 		return
 	}
+	grp.ID = uuid.NewString()
 	if err := h.service.Add(grp); err != nil {
 		http.Error(w, err.Error(), http.StatusConflict)
 		return

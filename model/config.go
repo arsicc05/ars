@@ -11,6 +11,7 @@ type Label struct {
 }
 
 type Config struct {
+    ID         string            `json:"id"`
 	Name       string            `json:"name"`
 	Version    int               `json:"version"`
 	Parameters []ConfigParameter `json:"parameters"`
@@ -23,6 +24,7 @@ type GroupConfig struct {
 }
 
 type ConfigGroup struct {
+    ID           string        `json:"id"`
 	Name         string        `json:"name"`
 	Version      int           `json:"version"`
 	Configs      []GroupConfig `json:"configs"`
