@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"projekat/model"
 )
 
@@ -15,16 +14,23 @@ func NewConfigService(repo model.ConfigRepository) ConfigService {
 	}
 }
 
-func (s ConfigService) Hello() {
-	fmt.Println("hello from config service")
-}
-
-func (s ConfigService) Add(config model.Config) {
-	s.repo.Add(config)
+func (s ConfigService) Add(config model.Config) error {
+	return s.repo.Add(config)
 }
 
 func (s ConfigService) Get(name string, version int) (model.Config, error) {
 	return s.repo.Get(name, version)
 }
 
-// todo: implementiraj metode za dodavanje, brisanje, dobavljanje itd.
+func (s ConfigService) GetAll() ([]model.Config, error) {
+	return s.repo.GetAll()
+}
+
+func (s ConfigService) Update(config model.Config) error {
+	return s.repo.Update(config)
+}
+
+func (s ConfigService) Delete(name string, version int) error {
+	return s.repo.Delete(name, version)
+}
+
