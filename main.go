@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"net"
 	"log"
 	"net/http"
 	"os"
@@ -10,13 +11,132 @@ import (
 	"projekat/model"
 	"projekat/repositories"
 	"projekat/services"
+	"strconv"
 	"syscall"
 	"time"
+	"strings"
+	"sync"
 
 	"github.com/gorilla/mux"
 )
 
+type TokenBucket struct {
+	capacity   int
+	tokens     float64
+	refillRate float64
+	lastRefill time.Time
+	mu         sync.Mutex
+}
+
+func NewTokenBucket(refillRate float64, capacity int) *TokenBucket {
+	return &TokenBucket{
+		capacity:   capacity,
+		tokens:     float64(capacity),
+		refillRate: refillRate,
+		lastRefill: time.Now(),
+	}
+}
+
+func (tb *TokenBucket) Allow() bool {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+
+	now := time.Now()
+	elapsed := now.Sub(tb.lastRefill).Seconds()
+	if elapsed > 0 {
+		tb.tokens += elapsed * tb.refillRate
+		if tb.tokens > float64(tb.capacity) {
+			tb.tokens = float64(tb.capacity)
+		}
+		tb.lastRefill = now
+	}
+
+	if tb.tokens >= 1 {
+		tb.tokens -= 1
+		return true
+	}
+	return false
+}
+
+type RateLimiter struct {
+	buckets    sync.Map // key: client identifier -> *TokenBucket
+	refillRate float64
+	capacity   int
+}
+
+func NewRateLimiter(rps float64, burst int) *RateLimiter {
+	return &RateLimiter{refillRate: rps, capacity: burst}
+}
+
+func (rl *RateLimiter) getBucket(key string) *TokenBucket {
+	if v, ok := rl.buckets.Load(key); ok {
+		return v.(*TokenBucket)
+	}
+	bucket := NewTokenBucket(rl.refillRate, rl.capacity)
+	actual, _ := rl.buckets.LoadOrStore(key, bucket)
+	return actual.(*TokenBucket)
+}
+
+func (rl *RateLimiter) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		client := getClientIP(r)
+		bucket := rl.getBucket(client)
+		if !bucket.Allow() {
+			w.Header().Set("Retry-After", "1")
+			http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func getClientIP(r *http.Request) string {
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		parts := strings.Split(xff, ",")
+		ip := strings.TrimSpace(parts[0])
+		if ip != "" {
+			return ip
+		}
+	}
+	if xr := r.Header.Get("X-Real-IP"); xr != "" {
+		return strings.TrimSpace(xr)
+	}
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return r.RemoteAddr
+	}
+	return host
+}
+
+func getEnvFloat(name string, def float64) float64 {
+	v := os.Getenv(name)
+	if v == "" {
+		return def
+	}
+	f, err := strconv.ParseFloat(v, 64)
+	if err != nil || f <= 0 {
+		return def
+	}
+	return f
+}
+
+func getEnvInt(name string, def int) int {
+	v := os.Getenv(name)
+	if v == "" {
+		return def
+	}
+	i, err := strconv.Atoi(v)
+	if err != nil || i <= 0 {
+		return def
+	}
+	return i
+}
+
 func main() {
+	rps := getEnvFloat("RATE_LIMIT_RPS", 5)
+	burst := getEnvInt("RATE_LIMIT_BURST", 10)
+	limiter := NewRateLimiter(rps, burst)
+
 	configRepo := repositories.NewConfigInMemRepository()
 	groupRepo := repositories.NewConfigGroupInMemRepository()
 	
@@ -44,6 +164,7 @@ func main() {
 	groupHandler := handlers.NewConfigGroupHandler(groupService)
 	
 	router := mux.NewRouter()
+	router.Use(limiter.Middleware)
 	
 	router.HandleFunc("/configs", configHandler.GetAll).Methods("GET")
 	router.HandleFunc("/configs", configHandler.Create).Methods("POST")
