@@ -176,3 +176,53 @@ func (h ConfigGroupHandler) RemoveConfig(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(newGroup)
 }
+
+// GET /groups/{name}/{version}/configs?labels=k1:v1;k2:v2
+func (h ConfigGroupHandler) GetConfigsByLabels(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+	version := vars["version"]
+	versionInt, err := strconv.Atoi(version)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	labels := r.URL.Query().Get("labels")
+	configs, err := h.service.FilterConfigsByLabels(name, versionInt, labels)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	resp, err := json.Marshal(configs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(resp)
+}
+
+// DELETE /groups/{name}/{version}/configs?labels=k1:v1;k2:v2
+func (h ConfigGroupHandler) DeleteConfigsByLabels(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	name := vars["name"]
+	version := vars["version"]
+	versionInt, err := strconv.Atoi(version)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	labels := r.URL.Query().Get("labels")
+	newGroup, err := h.service.CreateGroupWithoutConfigsByLabels(name, versionInt, labels)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(newGroup)
+}

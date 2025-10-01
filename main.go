@@ -179,6 +179,9 @@ func main() {
 	router.HandleFunc("/groups/{name}/{version}/configs", groupHandler.AddConfig).Methods("POST")
 	router.HandleFunc("/groups/{name}/{version}/configs/{configName}", groupHandler.GetConfig).Methods("GET")
 	router.HandleFunc("/groups/{name}/{version}/configs/{configName}", groupHandler.RemoveConfig).Methods("DELETE")
+	// labels-based operations
+	router.HandleFunc("/groups/{name}/{version}/configs", groupHandler.GetConfigsByLabels).Methods("GET").Queries("labels", "{labels}")
+	router.HandleFunc("/groups/{name}/{version}/configs", groupHandler.DeleteConfigsByLabels).Methods("DELETE").Queries("labels", "{labels}")
 
 	server := &http.Server{
 		Addr:    "0.0.0.0:8000",
