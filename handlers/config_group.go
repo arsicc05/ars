@@ -63,17 +63,13 @@ func (h ConfigGroupHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h ConfigGroupHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var groupData struct {
-		Name    string `json:"name"`
-		Version int    `json:"version"`
-	}
+	var group model.ConfigGroup
 
-	if err := json.NewDecoder(r.Body).Decode(&groupData); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&group); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	group := model.NewConfigGroup(groupData.Name, groupData.Version)
 	if err := h.service.Add(group); err != nil {
 		http.Error(w, err.Error(), http.StatusConflict)
 		return
