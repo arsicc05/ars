@@ -62,17 +62,13 @@ func (c ConfigHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c ConfigHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var configData struct {
-		Name    string `json:"name"`
-		Version int    `json:"version"`
-	}
+	var config model.Config
 
-	if err := json.NewDecoder(r.Body).Decode(&configData); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&config); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	config := model.NewConfig(configData.Name, configData.Version)
 	if err := c.service.Add(config); err != nil {
 		http.Error(w, err.Error(), http.StatusConflict)
 		return
