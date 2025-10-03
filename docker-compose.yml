@@ -1,0 +1,18 @@
+services:
+  config-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: config-management-api
+    ports:
+      - "8000:8000"
+    environment:
+      - RATE_LIMIT_RPS=5
+      - RATE_LIMIT_BURST=10
+    restart: unless-stopped
+    networks:
+      - config-network
+
+networks:
+  config-network:
+    driver: bridge
