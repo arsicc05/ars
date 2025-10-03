@@ -41,15 +41,18 @@ func (tb *TokenBucket) Allow() bool {
 	tb.mu.Lock()
 	defer tb.mu.Unlock()
 
-	now := time.Now()
-	elapsed := now.Sub(tb.lastRefill).Seconds()
-	if elapsed > 0 {
-		tb.tokens += elapsed * tb.refillRate
-		if tb.tokens > float64(tb.capacity) {
-			tb.tokens = float64(tb.capacity)
-		}
-		tb.lastRefill = now
-	}
+    now := time.Now()
+    // Discrete refill: add 1 token every 5 seconds
+    elapsed := now.Sub(tb.lastRefill)
+    if elapsed >= 5*time.Second {
+        increments := int(elapsed / (5 * time.Second))
+        tb.tokens += float64(increments)
+        if tb.tokens > float64(tb.capacity) {
+            tb.tokens = float64(tb.capacity)
+        }
+        // Advance lastRefill by the number of full intervals consumed
+        tb.lastRefill = tb.lastRefill.Add(time.Duration(increments) * 5 * time.Second)
+    }
 
 	if tb.tokens >= 1 {
 		tb.tokens -= 1
