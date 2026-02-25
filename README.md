@@ -1,4 +1,4 @@
-# ARS — Configuration Management API
+#Configuration Management API
 
 A simple REST API for storing and managing configuration data. You can store **configs** (name + version + key-value parameters) and **config groups** (groups of configs with optional labels for filtering).
 
